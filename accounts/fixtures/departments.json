@@ -1,0 +1,26 @@
+[
+  {
+    "model": "accounts.department",
+    "pk": 1,
+    "fields": {
+      "name": "Stock",
+      "code": "STOCK"
+    }
+  },
+  {
+    "model": "accounts.department",
+    "pk": 2,
+    "fields": {
+      "name": "Finance",
+      "code": "FIN"
+    }
+  },
+  {
+    "model": "accounts.department",
+    "pk": 3,
+    "fields": {
+      "name": "Ressources Humaines",
+      "code": "RH"
+    }
+  }
+]
