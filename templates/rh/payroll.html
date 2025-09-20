@@ -1,0 +1,265 @@
+{% extends 'rh/base.html' %}
+
+{% block title %}Gestion de la paie{% endblock %}
+
+{% block content %}
+<div class="p-4">
+    <h1 class="text-3xl font-bold mb-6">Gestion de la paie</h1>
+    
+    <!-- Bouton pour générer les fiches de paie -->
+    <div class="mb-4">
+        <button class="btn btn-primary" onclick="generatePayroll()">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Générer les fiches de paie
+        </button>
+    </div>
+    
+    <!-- Filtres -->
+    <div class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body">
+            <h2 class="card-title">Filtres</h2>
+            <form id="filter-form" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="label">
+                        <span class="label-text">Mois</span>
+                    </label>
+                    <input type="month" name="month" class="input input-bordered w-full" onchange="filterPayroll()" value="{{ request.GET.month }}">
+                </div>
+                
+                <div>
+                    <label class="label">
+                        <span class="label-text">Employé</span>
+                    </label>
+                    <select name="employee" class="select select-bordered w-full" onchange="filterPayroll()">
+                        <option value="">Tous</option>
+                        {% for payroll in payrolls %}
+                            <option value="{{ payroll.employee.id }}" {% if request.GET.employee == payroll.employee.id|stringformat:"i" %}selected{% endif %}>
+                                {{ payroll.employee.get_full_name|default:payroll.employee.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="label">
+                        <span class="label-text">Statut</span>
+                    </label>
+                    <select name="status" class="select select-bordered w-full" onchange="filterPayroll()">
+                        <option value="">Tous</option>
+                        <option value="paid" {% if request.GET.status == 'paid' %}selected{% endif %}>Payé</option>
+                        <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>En attente</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Liste des fiches de paie -->
+    <div class="overflow-x-auto bg-base-100 rounded-lg shadow">
+        <table class="table table-zebra w-full">
+            <thead>
+                <tr>
+                    <th>Employé</th>
+                    <th>Mois</th>
+                    <th>Salaire de base</th>
+                    <th>Primes</th>
+                    <th>Déductions</th>
+                    <th>Salaire net</th>
+                    <th>Date de paiement</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payroll in payrolls %}
+                <tr>
+                    <td>{{ payroll.employee.get_full_name|default:payroll.employee.username }}</td>
+                    <td>{{ payroll.month|date:"F Y" }}</td>
+                    <td>{{ payroll.base_salary }} CFA</td>
+                    <td>{{ payroll.bonuses }} CFA</td>
+                    <td>{{ payroll.deductions }} CFA</td>
+                    <td>{{ payroll.total_salary }} CFA</td>
+                    <td>
+                        {% if payroll.paid_date %}
+                            {{ payroll.paid_date|date:"d/m/Y" }}
+                        {% else %}
+                            En attente
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if payroll.paid_date %}
+                            <span class="badge badge-success">Payé</span>
+                        {% else %}
+                            <span class="badge badge-warning">En attente</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="flex space-x-2">
+                            <button class="btn btn-xs btn-info" onclick="viewPayroll({{ payroll.id }})">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </button>
+                            <button class="btn btn-xs btn-primary" onclick="downloadPayroll({{ payroll.id }})">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center">Aucune fiche de paie trouvée</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal pour les détails d'une fiche de paie -->
+<div id="payroll-details-modal" class="modal">
+    <div class="modal-box max-w-3xl">
+        <h3 class="font-bold text-lg">Détails de la fiche de paie</h3>
+        <div class="py-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <p><span class="font-semibold">Employé:</span> <span id="payroll-employee">-</span></p>
+                    <p><span class="font-semibold">Mois:</span> <span id="payroll-month">-</span></p>
+                    <p><span class="font-semibold">Date de paiement:</span> <span id="payroll-date">-</span></p>
+                </div>
+                <div>
+                    <p><span class="font-semibold">Statut:</span> <span id="payroll-status">-</span></p>
+                    <p><span class="font-semibold">Salaire net:</span> <span id="payroll-net" class="text-lg font-bold">-</span></p>
+                </div>
+            </div>
+            
+            <div class="border rounded-lg p-4">
+                <h4 class="font-semibold mb-2">Détail du calcul</h4>
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <span>Salaire de base</span>
+                        <span id="payroll-base">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Primes</span>
+                        <span id="payroll-bonuses">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Déductions</span>
+                        <span id="payroll-deductions">-</span>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="flex justify-between font-bold">
+                        <span>Salaire net</span>
+                        <span id="payroll-total">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-action">
+            <button class="btn btn-ghost" onclick="closePayrollDetailsModal()">Fermer</button>
+            <button class="btn btn-primary" onclick="downloadPayrollDetails()">Télécharger</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- <script>
+    // Fonction pour filtrer les fiches de paie
+    function filterPayroll() {
+        const form = document.getElementById('filter-form');
+        const formData = new FormData(form);
+        const params = new URLSearchParams();
+        
+        for (const [key, value] of formData.entries()) {
+            if (value) {
+                params.append(key, value);
+            }
+        }
+        
+        const url = new URL(window.location);
+        url.search = params.toString();
+        window.location.href = url.toString();
+    }
+    
+    // Fonctions pour gérer la paie
+    function generatePayroll() {
+        // Dans une vraie application, on enverrait une requête au serveur
+        alert('Génération des fiches de paie en cours...');
+    }
+    
+    function viewPayroll(id) {
+        // Dans une vraie application, on chargerait les données depuis le serveur
+        // Pour l'instant, on utilise les données du tableau
+        const row = event.target.closest('tr');
+        const employee = row.cells[0].textContent;
+        const month = row.cells[1].textContent;
+        const date = row.cells[6].textContent;
+        const status = row.cells[7].innerHTML;
+        const net = row.cells[5].textContent;
+        const base = row.cells[2].textContent;
+        const bonuses = row.cells[3].textContent;
+        const deductions = row.cells[4].textContent;
+        const total = row.cells[5].textContent;
+        
+        document.getElementById('payroll-employee').textContent = employee;
+        document.getElementById('payroll-month').textContent = month;
+        document.getElementById('payroll-date').textContent = date;
+        document.getElementById('payroll-status').innerHTML = status;
+        document.getElementById('payroll-net').textContent = net;
+        document.getElementById('payroll-base').textContent = base;
+        document.getElementById('payroll-bonuses').textContent = bonuses;
+        document.getElementById('payroll-deductions').textContent = deductions;
+        document.getElementById('payroll-total').textContent = total;
+        
+        document.getElementById('payroll-details-modal').classList.add('modal-open');
+    }
+    
+    function downloadPayroll(id) {
+        // Dans une vraie application, on téléchargerait le PDF de la fiche de paie
+        alert('Téléchargement de la fiche de paie...');
+    }
+    
+    function downloadPayrollDetails() {
+        // Dans une vraie application, on téléchargerait le PDF de la fiche de paie
+        alert('Téléchargement de la fiche de paie...');
+        closePayrollDetailsModal();
+    }
+    
+    function closePayrollDetailsModal() {
+        document.getElementById('payroll-details-modal').classList.remove('modal-open');
+    }
+</script>
+ -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{% endblock %}

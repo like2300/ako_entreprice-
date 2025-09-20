@@ -1,41 +1,113 @@
-{% extends "accounts/base.html" %}
-{% load widget_tweaks %}
+{% extends 'accounts/base.html' %}
 
-{% block title %}Creation{% endblock %}
+{% block title %}Inscription{% endblock %}
 
 {% block content %}
 <div class="max-w-md mx-auto bg-base-100 rounded-lg shadow-lg p-8">
-
-  <h2 class="text-3xl font-bold mb-8 text-center">Creation</h2>
-
-  <form method="post" class="space-y-6">
-    {% csrf_token %}
-
-    {% for field in form %}
-      <div>
-        <label for="{{ field.id_for_label }}" class="block mb-1 font-semibold text-gray-700">
-          {{ field.label }}
-          {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
-        </label>
-
-        {{ field|add_class:"input input-bordered w-full" }}
-
-        {% if field.errors %}
-          <p class="text-sm text-error mt-1">
-            {{ field.errors|striptags }}
-          </p>
+    <h2 class="text-3xl font-bold mb-8 text-center">Création de compte</h2>
+    
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label for="{{ form.first_name.id_for_label }}" class="block mb-1 font-semibold text-gray-700">
+                    Prénom
+                </label>
+                {{ form.first_name }}
+                {% if form.first_name.errors %}
+                <p class="text-sm text-error mt-1">
+                    {{ form.first_name.errors|striptags }}
+                </p>
+                {% endif %}
+            </div>
+            
+            <div>
+                <label for="{{ form.last_name.id_for_label }}" class="block mb-1 font-semibold text-gray-700">
+                    Nom
+                </label>
+                {{ form.last_name }}
+                {% if form.last_name.errors %}
+                <p class="text-sm text-error mt-1">
+                    {{ form.last_name.errors|striptags }}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div>
+            <label for="{{ form.username.id_for_label }}" class="block mb-1 font-semibold text-gray-700">
+                Nom d'utilisateur <span class="text-red-500">*</span>
+            </label>
+            {{ form.username }}
+            {% if form.username.errors %}
+            <p class="text-sm text-error mt-1">
+                {{ form.username.errors|striptags }}
+            </p>
+            {% endif %}
+        </div>
+        
+        <div>
+            <label for="{{ form.email.id_for_label }}" class="block mb-1 font-semibold text-gray-700">
+                Email
+            </label>
+            {{ form.email }}
+            {% if form.email.errors %}
+            <p class="text-sm text-error mt-1">
+                {{ form.email.errors|striptags }}
+            </p>
+            {% endif %}
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label for="{{ form.password1.id_for_label }}" class="block mb-1 font-semibold text-gray-700">
+                    Mot de passe <span class="text-red-500">*</span>
+                </label>
+                {{ form.password1 }}
+                {% if form.password1.errors %}
+                <p class="text-sm text-error mt-1">
+                    {{ form.password1.errors|striptags }}
+                </p>
+                {% endif %}
+            </div>
+            
+            <div>
+                <label for="{{ form.password2.id_for_label }}" class="block mb-1 font-semibold text-gray-700">
+                    Confirmation du mot de passe <span class="text-red-500">*</span>
+                </label>
+                {{ form.password2 }}
+                {% if form.password2.errors %}
+                <p class="text-sm text-error mt-1">
+                    {{ form.password2.errors|striptags }}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div>
+            <label for="{{ form.department.id_for_label }}" class="block mb-1 font-semibold text-gray-700">
+                Département <span class="text-red-500">*</span>
+            </label>
+            {{ form.department }}
+            {% if form.department.errors %}
+            <p class="text-sm text-error mt-1">
+                {{ form.department.errors|striptags }}
+            </p>
+            {% endif %}
+        </div>
+        
+        {% if form.non_field_errors %}
+        <div class="alert alert-error mb-4">
+            {{ form.non_field_errors }}
+        </div>
         {% endif %}
-      </div>
-    {% endfor %}
-
-    {% if form.non_field_errors %}
-      <div class="alert alert-error mb-4">
-        {{ form.non_field_errors }}
-      </div>
-    {% endif %}
-
-    <button type="submit" class="btn btn-primary btn-block text-lg font-semibold">Valider</button>
-  </form>
-
+        
+        <button type="submit" class="btn btn-primary btn-block text-lg font-semibold">Créer le compte</button>
+        
+        <p class="text-center">
+            Déjà un compte ? <a href="{% url 'accounts:login' %}" class="link link-primary">Se connecter</a>
+        </p>
+    </form>
 </div>
 {% endblock %}

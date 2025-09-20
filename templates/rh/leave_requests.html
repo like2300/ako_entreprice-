@@ -1,0 +1,214 @@
+{% extends 'rh/base.html' %}
+
+{% block title %}Gestion des congés{% endblock %}
+
+{% block content %}
+<div class="p-4">
+    <h1 class="text-3xl font-bold mb-6">Gestion des congés</h1>
+    
+    <!-- Filtres -->
+    <div class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body">
+            <h2 class="card-title">Filtres</h2>
+            <form id="filter-form" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="label">
+                        <span class="label-text">Statut</span>
+                    </label>
+                    <select name="status" class="select select-bordered w-full" onchange="filterLeaveRequests()">
+                        <option value="">Tous</option>
+                        <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>En attente</option>
+                        <option value="approved" {% if request.GET.status == 'approved' %}selected{% endif %}>Approuvé</option>
+                        <option value="rejected" {% if request.GET.status == 'rejected' %}selected{% endif %}>Rejeté</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="label">
+                        <span class="label-text">Employé</span>
+                    </label>
+                    <select name="employee" class="select select-bordered w-full" onchange="filterLeaveRequests()">
+                        <option value="">Tous</option>
+                        {% for leave in leaves %}
+                            <option value="{{ leave.employee.id }}" {% if request.GET.employee == leave.employee.id|stringformat:"i" %}selected{% endif %}>
+                                {{ leave.employee.get_full_name|default:leave.employee.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="label">
+                        <span class="label-text">Type de congé</span>
+                    </label>
+                    <select name="leave_type" class="select select-bordered w-full" onchange="filterLeaveRequests()">
+                        <option value="">Tous</option>
+                        <option value="paid" {% if request.GET.leave_type == 'paid' %}selected{% endif %}>Congé payé</option>
+                        <option value="unpaid" {% if request.GET.leave_type == 'unpaid' %}selected{% endif %}>Congé sans solde</option>
+                        <option value="sick" {% if request.GET.leave_type == 'sick' %}selected{% endif %}>Congé maladie</option>
+                        <option value="maternity" {% if request.GET.leave_type == 'maternity' %}selected{% endif %}>Congé maternité</option>
+                        <option value="paternity" {% if request.GET.leave_type == 'paternity' %}selected{% endif %}>Congé paternité</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Liste des demandes de congé -->
+    <div class="overflow-x-auto bg-base-100 rounded-lg shadow">
+        <table class="table table-zebra w-full">
+            <thead>
+                <tr>
+                    <th>Employé</th>
+                    <th>Type de congé</th>
+                    <th>Dates</th>
+                    <th>Durée</th>
+                    <th>Motif</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for leave in leaves %}
+                <tr>
+                    <td>{{ leave.employee.get_full_name|default:leave.employee.username }}</td>
+                    <td>
+                        {% if leave.leave_type == 'paid' %}Congé payé
+                        {% elif leave.leave_type == 'unpaid' %}Congé sans solde
+                        {% elif leave.leave_type == 'sick' %}Congé maladie
+                        {% elif leave.leave_type == 'maternity' %}Congé maternité
+                        {% elif leave.leave_type == 'paternity' %}Congé paternité
+                        {% endif %}
+                    </td>
+                    <td>{{ leave.start_date|date:"d/m/Y" }} - {{ leave.end_date|date:"d/m/Y" }}</td>
+                    <td>{{ leave.duration }} jours</td>
+                    <td>{{ leave.reason|truncatewords:5 }}</td>
+                    <td>
+                        {% if leave.status == 'pending' %}
+                            <span class="badge badge-warning">En attente</span>
+                        {% elif leave.status == 'approved' %}
+                            <span class="badge badge-success">Approuvé</span>
+                        {% elif leave.status == 'rejected' %}
+                            <span class="badge badge-error">Rejeté</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="flex space-x-2">
+                            {% if leave.status == 'pending' %}
+                                <button class="btn btn-xs btn-success" onclick="approveLeave({{ leave.id }})">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </button>
+                                <button class="btn btn-xs btn-error" onclick="rejectLeave({{ leave.id }})">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            {% endif %}
+                            <button class="btn btn-xs btn-info" onclick="viewLeaveDetails({{ leave.id }})">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center">Aucune demande de congé trouvée</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal pour les détails d'une demande de congé -->
+<div id="leave-details-modal" class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg">Détails de la demande de congé</h3>
+        <div class="py-4">
+            <div class="space-y-2">
+                <p><span class="font-semibold">Employé:</span> <span id="detail-employee">-</span></p>
+                <p><span class="font-semibold">Type de congé:</span> <span id="detail-type">-</span></p>
+                <p><span class="font-semibold">Dates:</span> <span id="detail-dates">-</span></p>
+                <p><span class="font-semibold">Durée:</span> <span id="detail-duration">-</span></p>
+                <p><span class="font-semibold">Motif:</span> <span id="detail-reason">-</span></p>
+                <p><span class="font-semibold">Statut:</span> <span id="detail-status">-</span></p>
+                <p><span class="font-semibold">Date de demande:</span> <span id="detail-created">-</span></p>
+                <p><span class="font-semibold">Dernière mise à jour:</span> <span id="detail-updated">-</span></p>
+            </div>
+        </div>
+        <div class="modal-action">
+            <button class="btn btn-ghost" onclick="closeLeaveDetailsModal()">Fermer</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Fonction pour filtrer les demandes de congé
+    function filterLeaveRequests() {
+        const form = document.getElementById('filter-form');
+        const formData = new FormData(form);
+        const params = new URLSearchParams();
+        
+        for (const [key, value] of formData.entries()) {
+            if (value) {
+                params.append(key, value);
+            }
+        }
+        
+        const url = new URL(window.location);
+        url.search = params.toString();
+        window.location.href = url.toString();
+    }
+    
+    // Fonctions pour gérer les actions sur les congés
+    function approveLeave(id) {
+        if (confirm('Êtes-vous sûr de vouloir approuver cette demande de congé ?')) {
+            // Dans une vraie application, on enverrait une requête au serveur
+            alert('Demande de congé approuvée');
+        }
+    }
+    
+    function rejectLeave(id) {
+        if (confirm('Êtes-vous sûr de vouloir rejeter cette demande de congé ?')) {
+            // Dans une vraie application, on enverrait une requête au serveur
+            alert('Demande de congé rejetée');
+        }
+    }
+    
+    function viewLeaveDetails(id) {
+        // Dans une vraie application, on chargerait les données depuis le serveur
+        // Pour l'instant, on utilise les données du tableau
+        const row = event.target.closest('tr');
+        const employee = row.cells[0].textContent;
+        const type = row.cells[1].textContent;
+        const dates = row.cells[2].textContent;
+        const duration = row.cells[3].textContent;
+        const reason = row.cells[4].textContent;
+        const status = row.cells[5].innerHTML;
+        const created = '01/09/2025 10:30'; // Valeur simulée
+        const updated = '01/09/2025 10:30'; // Valeur simulée
+        
+        document.getElementById('detail-employee').textContent = employee;
+        document.getElementById('detail-type').textContent = type;
+        document.getElementById('detail-dates').textContent = dates;
+        document.getElementById('detail-duration').textContent = duration;
+        document.getElementById('detail-reason').textContent = reason;
+        document.getElementById('detail-status').innerHTML = status;
+        document.getElementById('detail-created').textContent = created;
+        document.getElementById('detail-updated').textContent = updated;
+        
+        document.getElementById('leave-details-modal').classList.add('modal-open');
+    }
+    
+    function closeLeaveDetailsModal() {
+        document.getElementById('leave-details-modal').classList.remove('modal-open');
+    }
+</script>
+{% endblock %}

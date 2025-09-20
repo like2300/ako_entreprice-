@@ -1,0 +1,295 @@
+{% extends 'rh/base.html' %}
+
+{% block title %}Évaluations de performance{% endblock %}
+
+{% block content %}
+<div class="p-4">
+    <h1 class="text-3xl font-bold mb-6">Évaluations de performance</h1>
+    
+    <!-- Bouton pour créer une évaluation -->
+    <div class="mb-4">
+        <button class="btn btn-primary" onclick="openReviewModal()">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Nouvelle évaluation
+        </button>
+    </div>
+    
+    <!-- Filtres -->
+    <div class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body">
+            <h2 class="card-title">Filtres</h2>
+            <form id="filter-form" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="label">
+                        <span class="label-text">Employé</span>
+                    </label>
+                    <select name="employee" class="select select-bordered w-full" onchange="filterReviews()">
+                        <option value="">Tous</option>
+                        {% for review in reviews %}
+                            <option value="{{ review.employee.id }}" {% if request.GET.employee == review.employee.id|stringformat:"i" %}selected{% endif %}>
+                                {{ review.employee.get_full_name|default:review.employee.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="label">
+                        <span class="label-text">Période</span>
+                    </label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="date" name="start_date" class="input input-bordered w-full" placeholder="Du" onchange="filterReviews()" value="{{ request.GET.start_date }}">
+                        <input type="date" name="end_date" class="input input-bordered w-full" placeholder="Au" onchange="filterReviews()" value="{{ request.GET.end_date }}">
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="label">
+                        <span class="label-text">Note moyenne</span>
+                    </label>
+                    <select name="rating" class="select select-bordered w-full" onchange="filterReviews()">
+                        <option value="">Toutes</option>
+                        <option value="4.5" {% if request.GET.rating == '4.5' %}selected{% endif %}>Excellent (4.5-5.0)</option>
+                        <option value="4.0" {% if request.GET.rating == '4.0' %}selected{% endif %}>Très bon (4.0-4.4)</option>
+                        <option value="3.5" {% if request.GET.rating == '3.5' %}selected{% endif %}>Bon (3.5-3.9)</option>
+                        <option value="3.0" {% if request.GET.rating == '3.0' %}selected{% endif %}>Satisfaisant (3.0-3.4)</option>
+                        <option value="0" {% if request.GET.rating == '0' %}selected{% endif %}>À améliorer (&lt; 3.0)</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Liste des évaluations -->
+    <div class="overflow-x-auto bg-base-100 rounded-lg shadow">
+        <table class="table table-zebra w-full">
+            <thead>
+                <tr>
+                    <th>Employé</th>
+                    <th>Évaluateur</th>
+                    <th>Date d'évaluation</th>
+                    <th>Période</th>
+                    <th>Note globale</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for review in reviews %}
+                <tr>
+                    <td>{{ review.employee.get_full_name|default:review.employee.username }}</td>
+                    <td>{{ review.reviewer.get_full_name|default:review.reviewer.username }}</td>
+                    <td>{{ review.review_date|date:"d/m/Y" }}</td>
+                    <td>{{ review.period_start|date:"d/m/Y" }} - {{ review.period_end|date:"d/m/Y" }}</td>
+                    <td>
+                        <div class="flex items-center">
+                            <span class="mr-2">{{ review.overall_rating }}</span>
+                            <div class="rating rating-sm">
+                                {% for i in "12345" %}
+                                    {% if review.overall_rating >= forloop.counter %}
+                                        <input type="radio" name="rating-{{ review.id }}" class="mask mask-star-2 bg-orange-400" checked />
+                                    {% else %}
+                                        <input type="radio" name="rating-{{ review.id }}" class="mask mask-star-2 bg-gray-300" />
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="flex space-x-2">
+                            <button class="btn btn-xs btn-info" onclick="viewReview({{ review.id }})">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">Aucune évaluation trouvée</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal pour créer/modifier une évaluation -->
+<div id="review-modal" class="modal">
+    <div class="modal-box max-w-3xl">
+        <h3 class="font-bold text-lg" id="review-modal-title">Nouvelle évaluation</h3>
+        <form id="review-form" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="label">
+                        <span class="label-text">Employé *</span>
+                    </label>
+                    <select class="select select-bordered w-full" required>
+                        <option value="">Sélectionner un employé</option>
+                        {% for review in reviews %}
+                            <option value="{{ review.employee.id }}">
+                                {{ review.employee.get_full_name|default:review.employee.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="label">
+                        <span class="label-text">Évaluateur *</span>
+                    </label>
+                    <select class="select select-bordered w-full" required>
+                        <option value="">Sélectionner un évaluateur</option>
+                        {% for review in reviews %}
+                            <option value="{{ review.reviewer.id }}">
+                                {{ review.reviewer.get_full_name|default:review.reviewer.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="label">
+                        <span class="label-text">Date d'évaluation *</span>
+                    </label>
+                    <input type="date" class="input input-bordered w-full" required>
+                </div>
+                
+                <div>
+                    <label class="label">
+                        <span class="label-text">Période *</span>
+                    </label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="date" class="input input-bordered w-full" placeholder="Début" required>
+                        <input type="date" class="input input-bordered w-full" placeholder="Fin" required>
+                    </div>
+                </div>
+                
+                <div class="md:col-span-2">
+                    <label class="label">
+                        <span class="label-text">Note globale *</span>
+                    </label>
+                    <div class="rating rating-lg">
+                        <input type="radio" name="rating" class="mask mask-star-2 bg-orange-400" />
+                        <input type="radio" name="rating" class="mask mask-star-2 bg-orange-400" />
+                        <input type="radio" name="rating" class="mask mask-star-2 bg-orange-400" />
+                        <input type="radio" name="rating" class="mask mask-star-2 bg-orange-400" />
+                        <input type="radio" name="rating" class="mask mask-star-2 bg-orange-400" />
+                    </div>
+                </div>
+                
+                <div class="md:col-span-2">
+                    <label class="label">
+                        <span class="label-text">Commentaires</span>
+                    </label>
+                    <textarea class="textarea textarea-bordered w-full" rows="4"></textarea>
+                </div>
+            </div>
+            
+            <div class="modal-action">
+                <button type="button" class="btn btn-ghost" onclick="closeReviewModal()">Annuler</button>
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal pour voir les détails d'une évaluation -->
+<div id="review-details-modal" class="modal">
+    <div class="modal-box max-w-3xl">
+        <h3 class="font-bold text-lg">Détails de l'évaluation</h3>
+        <div class="py-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <p><span class="font-semibold">Employé:</span> <span id="detail-employee">-</span></p>
+                    <p><span class="font-semibold">Évaluateur:</span> <span id="detail-reviewer">-</span></p>
+                    <p><span class="font-semibold">Date d'évaluation:</span> <span id="detail-date">-</span></p>
+                </div>
+                <div>
+                    <p><span class="font-semibold">Période:</span> <span id="detail-period">-</span></p>
+                    <p><span class="font-semibold">Note globale:</span> 
+                        <span id="detail-rating" class="text-lg font-bold">-</span>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="border rounded-lg p-4">
+                <h4 class="font-semibold mb-2">Commentaires</h4>
+                <p id="detail-comments">-</p>
+            </div>
+        </div>
+        <div class="modal-action">
+            <button class="btn btn-ghost" onclick="closeReviewDetailsModal()">Fermer</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Fonction pour filtrer les évaluations
+    function filterReviews() {
+        const form = document.getElementById('filter-form');
+        const formData = new FormData(form);
+        const params = new URLSearchParams();
+        
+        for (const [key, value] of formData.entries()) {
+            if (value) {
+                params.append(key, value);
+            }
+        }
+        
+        const url = new URL(window.location);
+        url.search = params.toString();
+        window.location.href = url.toString();
+    }
+    
+    // Fonctions pour gérer les évaluations
+    function openReviewModal() {
+        document.getElementById('review-modal-title').textContent = 'Nouvelle évaluation';
+        document.getElementById('review-form').reset();
+        document.getElementById('review-modal').classList.add('modal-open');
+    }
+    
+    function closeReviewModal() {
+        document.getElementById('review-modal').classList.remove('modal-open');
+    }
+    
+    function viewReview(id) {
+        // Dans une vraie application, on chargerait les données depuis le serveur
+        // Pour l'instant, on utilise les données du tableau
+        const row = event.target.closest('tr');
+        const employee = row.cells[0].textContent;
+        const reviewer = row.cells[1].textContent;
+        const date = row.cells[2].textContent;
+        const period = row.cells[3].textContent;
+        const rating = row.cells[4].querySelector('span').textContent;
+        const comments = 'Très bon travail sur l\'ensemble des projets assignés. Bonne communication avec l\'équipe.'; // Valeur simulée
+        
+        document.getElementById('detail-employee').textContent = employee;
+        document.getElementById('detail-reviewer').textContent = reviewer;
+        document.getElementById('detail-date').textContent = date;
+        document.getElementById('detail-period').textContent = period;
+        document.getElementById('detail-rating').textContent = rating;
+        document.getElementById('detail-comments').textContent = comments;
+        
+        document.getElementById('review-details-modal').classList.add('modal-open');
+    }
+    
+    function closeReviewDetailsModal() {
+        document.getElementById('review-details-modal').classList.remove('modal-open');
+    }
+    
+    // Gestion du formulaire
+    document.getElementById('review-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Dans une vraie application, on enverrait les données au serveur
+        alert('Évaluation enregistrée avec succès');
+        closeReviewModal();
+    });
+</script>
+{% endblock %}

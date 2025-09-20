@@ -1,17 +1,56 @@
-{% load static %}
-<!doctype html>
-<html>
+{% load widget_tweaks %}
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
 <head>
-  <meta charset="utf-8">
-  <title>Connexion — Entreprise</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion | Gestion Horaire</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@2.51.6/dist/full.css" rel="stylesheet" type="text/css" />
 </head>
-<body>
-  <h1>Connexion</h1>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Se connecter</button>
-  </form>
-  <p>Pas encore de compte ? <a href="{% url 'signup' %}">S'inscrire</a></p>
+<body class="bg-base-200">
+    <div class="hero min-h-screen">
+        <div class="hero-content flex-col lg:flex-row-reverse">
+            <div class="text-center lg:text-left">
+                <h1 class="text-5xl font-bold">Connectez-vous !</h1>
+                <p class="py-6">Accédez à votre espace personnel pour gérer vos horaires, consulter votre historique et bien plus encore.</p>
+            </div>
+            <div class="card flex-shrink-0 w-full max-w-sm shadow-2xl bg-base-100">
+                <form method="post" class="card-body">
+                    {% csrf_token %}
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Nom d'utilisateur</span>
+                        </label>
+                        {% render_field form.username class="input input-bordered" %}
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Mot de passe</span>
+                        </label>
+                        {% render_field form.password class="input input-bordered" %}
+                        <label class="label">
+                            <a href="#" class="label-text-alt link link-hover">Mot de passe oublié ?</a>
+                        </label>
+                    </div>
+                    {% if form.errors %}
+                        <div class="alert alert-error shadow-lg">
+                            <div>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <span>Erreur: Identifiants invalides.</span>
+                            </div>
+                        </div>
+                    {% endif %}
+                    <div class="form-control mt-6">
+                        <button type="submit" class="btn btn-primary">Connexion</button>
+                    </div>
+                    <div class="divider">OU</div>
+                    <p class="text-center">
+                        Pas encore de compte ? <a href="{% url 'accounts:signup' %}" class="link link-primary">S'inscrire</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

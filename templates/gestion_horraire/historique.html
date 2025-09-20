@@ -1,0 +1,162 @@
+{% extends 'gestion_horraire/base.html' %}
+
+{% block title %}Historique{% endblock %}
+
+{% block content %}
+<div class="space-y-6 w-screen max-w-full px-4">
+    <!-- Statistiques -->
+    <div class="grid grid-cols-2 gap-4">
+        <div class="stat bg-base-100 shadow-xl rounded-box">
+            <div class="stat-title">Total Jours</div>
+            <div class="stat-value text-2xl">{{ stats.total_jours }}</div>
+        </div>
+        <div class="stat bg-success/10 shadow-xl rounded-box">
+            <div class="stat-title">Présences</div>
+            <div class="stat-value text-success text-2xl">{{ stats.presences }}</div>
+        </div>
+        <div class="stat bg-warning/10 shadow-xl rounded-box">
+            <div class="stat-title">Retards</div>
+            <div class="stat-value text-warning text-2xl">{{ stats.retards }}</div>
+        </div>
+        <div class="stat bg-error/10 shadow-xl rounded-box">
+            <div class="stat-title">Absences</div>
+            <div class="stat-value text-error text-2xl">{{ stats.absences }}</div>
+        </div>
+    </div>
+
+
+    <!-- ========== Filtres ========== -->
+    <div class="card bg-base-100 shadow-lg rounded-box w-full">
+        <div class="card-body p-4">
+            <h3 class="card-title text-lg font-semibold mb-4">Filtres</h3>
+            <form method="get" class="grid grid-cols-1 gap-4">
+                <!-- Date début -->
+                <div class="form-control w-full">
+                    <label class="label">
+                        <span class="label-text flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            Date début
+                        </span>
+                    </label>
+                    <input type="date" name="date_debut" value="{{ filtres.date_debut|date:'Y-m-d' }}" class="input input-bordered w-full">
+                </div>
+
+                <!-- Date fin -->
+                <div class="form-control w-full">
+                    <label class="label">
+                        <span class="label-text">Date fin</span>
+                    </label>
+                    <input type="date" name="date_fin" value="{{ filtres.date_fin|date:'Y-m-d' }}" class="input input-bordered w-full">
+                </div>
+
+                <!-- Statut -->
+                <div class="form-control w-full">
+                    <label class="label">
+                        <span class="label-text">Statut</span>
+                    </label>
+                    <select name="status" class="select select-bordered w-full">
+                        <option value="">Tous</option>
+                        {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if filtres.status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Bouton Filtrer -->
+                <div class="form-control">
+                    <button type="submit" class="btn btn-primary w-full">Filtrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Table des pointages -->
+    <div class="card bg-base-100 shadow-xl w-full">
+        <div class="card-body p-4">
+            <h2 class="card-title text-xl mb-4">Historique des pointages</h2>
+            <div class="overflow-x-auto w-full">
+                <table class="table w-full">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Arrivée</th>
+                            <th>Départ</th>
+                            <th>Temps</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in page_obj %}
+                        <tr class="hover">
+                            <td class="whitespace-nowrap">{{ p.date|date:"d/m/Y" }}</td>
+                            <td class="whitespace-nowrap">{{ p.heure_arrivee|time:"H:i"|default:"-" }}</td>
+                            <td class="whitespace-nowrap">{{ p.heure_depart|time:"H:i"|default:"-" }}</td>
+                            <td class="whitespace-nowrap">{{ p.get_temps_travail_formate }}</td>
+                            <td>
+                                <div class="badge {% if p.status == 'PRESENT' %}badge-success{% elif p.status == 'RETARD' %}badge-warning{% elif p.status == 'ABSENT' %}badge-error{% else %}badge-info{% endif %} badge-sm">
+                                    {{ p.get_status_display }}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">Aucun pointage trouvé.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.paginator.num_pages > 1 %}
+            <div class="flex justify-center mt-4 overflow-x-auto">
+                <div class="join">
+                    {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}" class="join-item btn btn-sm">«</a>
+                    {% endif %}
+                    
+                    <button class="join-item btn btn-sm">Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}</button>
+                    
+                    {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}" class="join-item btn btn-sm">»</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Derniers logs -->
+    <div class="card bg-base-100 shadow-xl w-full">
+        <div class="card-body p-4">
+            <h3 class="card-title text-xl mb-4">Dernières actions</h3>
+            <div class="overflow-x-auto w-full">
+                <table class="table w-full">
+                    <thead>
+                        <tr>
+                            <th>Date/Heure</th>
+                            <th>Action</th>
+                            <th>Appareil</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr class="hover">
+                            <td class="whitespace-nowrap text-sm">{{ log.date_heure|date:"d/m/Y H:i" }}</td>
+                            <td class="whitespace-nowrap text-sm">{{ log.get_type_action_display }}</td>
+                            <td class="truncate max-w-xs text-xs">{{ log.device|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center">Aucun log trouvé.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

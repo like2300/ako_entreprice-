@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %} | Gestion Horaire</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@2.51.6/dist/full.css" rel="stylesheet" type="text/css" />
+</head>
+<body class="bg-base-200">
+    <div class="flex">
+        <!-- Sidebar pour grands écrans -->
+        <aside  class="hidden  relative lg:block w-64 bg-base-100 shadow-lg min-h-screen p-4">
+            <div class="text-2xl font-bold mb-6">Gestion Horaire</div>
+            <ul class="menu">
+                <li>
+                    <!-- gradiant from bg-green-600 to #c2d928
+                     bg-gradient-to-r from-[#77c754] to-[#c2d928]
+                    -->
+                    <a href="{% url 'gestion_Horraire:pointage_home' %}" class="{% if request.resolver_match.url_name == 'pointage_home' %}text-white  bg-gradient-to-r from-[#77c754] to-[#c2d928]  rounded-3xl  {% endif %}"> 
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        Pointage
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'gestion_Horraire:historique' %}" class="{% if request.resolver_match.url_name == 'historique' %}text-white  bg-gradient-to-r from-[#77c754] to-[#c2d928]  rounded-3xl  {% endif %}"> 
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        Historique
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'gestion_Horraire:profil' %}" class="{% if request.resolver_match.url_name == 'profil' %}text-white  bg-gradient-to-r from-[#77c754] to-[#c2d928]  rounded-3xl  {% endif %}"> 
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                        Profil
+                    </a>
+                </li>
+                
+                
+                 
+               
+
+               
+
+
+
+                     <form class="absolute bottom-9 w-[220px] left-4" method="post" action="{% url 'accounts:logout' %}"> 
+                        {% csrf_token %}
+                        <div class="divider"></div>
+                         <li class="mb-4">
+                            <a href="#" class="active text-white rounded-3xl   "> 
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(255, 255, 255, 1);transform: ;msFilter:;"><path d="M3 11h8V3H3zm2-6h4v4H5zM3 21h8v-8H3zm2-6h4v4H5zm8-12v8h8V3zm6 6h-4V5h4zm-5.99 4h2v2h-2zm2 2h2v2h-2zm-2 2h2v2h-2zm4 0h2v2h-2zm2 2h2v2h-2zm-4 0h2v2h-2zm2-6h2v2h-2zm2 2h2v2h-2z"></path></svg>
+                                Qrcode 
+                            </a>
+                        </li>
+
+                        <button type="submit" class="btn text-white bg-green-600 rounded-3xl gap-4 btn-ghost w-full justify-start">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 " fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                            <span>Déconnexion</span>
+                        </button>
+                    </form>
+                 
+            </ul>
+        </aside>
+
+        <!-- Contenu principal  bg- none repaet bg -->
+        <main class="flex-grow  bg-no-repeat
+         bg-[url('https://i.pinimg.com/1200x/31/81/16/31811691fb86823031c4ae0365a41993.jpg')] 
+         bg-cover bg-center"> 
+            <div class="w-full max-w-4xl mx-auto">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Barre de navigation pour petits écrans -->
+    <div class="btm-nav z-50 lg:hidden">
+        <a href="{% url 'gestion_Horraire:pointage_home' %}" class="{% if request.resolver_match.url_name == 'pointage_home' %}active{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+        </a>
+        <a href="{% url 'gestion_Horraire:historique' %}" class="{% if request.resolver_match.url_name == 'historique' %}active{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        </a>
+        <!-- <a href="" class="{% if request.resolver_match.url_name == 'profil' %}active{% endif %}">
+             qrcode 
+             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A5.002 5.002 0 0113 11H9a5.002 5.002 0 01-6.938-4.582m15.356 2L20 20M4 9h1m3 0h1m3 0h1m3 0h1m3 0h1M4 14h1m3 0h1m3 0h1m3 0h1m3 0h1M4 19h1m3 0h1m3 0h1m3 0h1m3 0h1" /></svg>
+        </a> -->
+        <a href="{% url 'gestion_Horraire:profil' %}" class="{% if request.resolver_match.url_name == 'profil' %}active{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+        </a>
+    </div>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,282 @@
+{% extends 'rh/base.html' %}
+
+{% block title %}Recrutement{% endblock %}
+
+{% block content %}
+<div class="p-4">
+    <h1 class="text-3xl font-bold mb-6">Recrutement</h1>
+    
+    <!-- Bouton pour créer une offre -->
+    <div class="mb-4">
+        <button class="btn btn-primary" onclick="openRecruitmentModal()">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Nouvelle offre
+        </button>
+    </div>
+    
+    <!-- Filtres -->
+    <div class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body">
+            <h2 class="card-title">Filtres</h2>
+            <form id="filter-form" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="label">
+                        <span class="label-text">Statut</span>
+                    </label>
+                    <select name="status" class="select select-bordered w-full" onchange="filterRecruitments()">
+                        <option value="">Tous</option>
+                        <option value="open" {% if request.GET.status == 'open' %}selected{% endif %}>Ouvert</option>
+                        <option value="closed" {% if request.GET.status == 'closed' %}selected{% endif %}>Fermé</option>
+                        <option value="filled" {% if request.GET.status == 'filled' %}selected{% endif %}>Pourvu</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="label">
+                        <span class="label-text">Département</span>
+                    </label>
+                    <select name="department" class="select select-bordered w-full" onchange="filterRecruitments()">
+                        <option value="">Tous</option>
+                        {% for recruitment in recruitments %}
+                            {% if recruitment.department %}
+                                <option value="{{ recruitment.department.id }}" {% if request.GET.department == recruitment.department.id|stringformat:"i" %}selected{% endif %}>
+                                    {{ recruitment.department.name }}
+                                </option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="label">
+                        <span class="label-text">Type de poste</span>
+                    </label>
+                    <select name="job_type" class="select select-bordered w-full" onchange="filterRecruitments()">
+                        <option value="">Tous</option>
+                        <option value="full_time" {% if request.GET.job_type == 'full_time' %}selected{% endif %}>Temps plein</option>
+                        <option value="part_time" {% if request.GET.job_type == 'part_time' %}selected{% endif %}>Temps partiel</option>
+                        <option value="contract" {% if request.GET.job_type == 'contract' %}selected{% endif %}>Contrat</option>
+                        <option value="internship" {% if request.GET.job_type == 'internship' %}selected{% endif %}>Stage</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Liste des offres -->
+    <div class="overflow-x-auto bg-base-100 rounded-lg shadow">
+        <table class="table table-zebra w-full">
+            <thead>
+                <tr>
+                    <th>Titre</th>
+                    <th>Département</th>
+                    <th>Lieu</th>
+                    <th>Type</th>
+                    <th>Date de publication</th>
+                    <th>Date de clôture</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for recruitment in recruitments %}
+                <tr>
+                    <td>{{ recruitment.title }}</td>
+                    <td>{{ recruitment.department.name|default:"Non spécifié" }}</td>
+                    <td>{{ recruitment.location }}</td>
+                    <td>
+                        {% if recruitment.job_type == 'full_time' %}Temps plein
+                        {% elif recruitment.job_type == 'part_time' %}Temps partiel
+                        {% elif recruitment.job_type == 'contract' %}Contrat
+                        {% elif recruitment.job_type == 'internship' %}Stage
+                        {% endif %}
+                    </td>
+                    <td>{{ recruitment.posted_date|date:"d/m/Y" }}</td>
+                    <td>{{ recruitment.closing_date|date:"d/m/Y"|default:"Non spécifiée" }}</td>
+                    <td>
+                        {% if recruitment.status == 'open' %}
+                            <span class="badge badge-success">Ouvert</span>
+                        {% elif recruitment.status == 'closed' %}
+                            <span class="badge badge-error">Fermé</span>
+                        {% elif recruitment.status == 'filled' %}
+                            <span class="badge badge-info">Pourvu</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="flex space-x-2">
+                            <button class="btn btn-xs btn-outline btn-primary" onclick="editRecruitment({{ recruitment.id }})">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                            </button>
+                            <button class="btn btn-xs btn-outline btn-error" onclick="deleteRecruitment({{ recruitment.id }})">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center">Aucune offre de recrutement trouvée</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal pour créer/modifier une offre -->
+<div id="recruitment-modal" class="modal">
+    <div class="modal-box max-w-3xl">
+        <h3 class="font-bold text-lg" id="recruitment-modal-title">Nouvelle offre</h3>
+        <form id="recruitment-form" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="md:col-span-2">
+                    <label class="label">
+                        <span class="label-text">Titre du poste *</span>
+                    </label>
+                    <input type="text" class="input input-bordered w-full" required>
+                </div>
+                
+                <div>
+                    <label class="label">
+                        <span class="label-text">Département</span>
+                    </label>
+                    <select class="select select-bordered w-full">
+                        <option value="">Sélectionner un département</option>
+                        {% for recruitment in recruitments %}
+                            {% if recruitment.department %}
+                                <option value="{{ recruitment.department.id }}">
+                                    {{ recruitment.department.name }}
+                                </option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="label">
+                        <span class="label-text">Lieu *</span>
+                    </label>
+                    <input type="text" class="input input-bordered w-full" required>
+                </div>
+                
+                <div>
+                    <label class="label">
+                        <span class="label-text">Type de poste *</span>
+                    </label>
+                    <select class="select select-bordered w-full" required>
+                        <option value="">Sélectionner un type</option>
+                        <option value="full_time">Temps plein</option>
+                        <option value="part_time">Temps partiel</option>
+                        <option value="contract">Contrat</option>
+                        <option value="internship">Stage</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="label">
+                        <span class="label-text">Fourchette salariale</span>
+                    </label>
+                    <input type="text" class="input input-bordered w-full">
+                </div>
+                
+                <div>
+                    <label class="label">
+                        <span class="label-text">Date de clôture</span>
+                    </label>
+                    <input type="date" class="input input-bordered w-full">
+                </div>
+                
+                <div>
+                    <label class="label">
+                        <span class="label-text">Statut *</span>
+                    </label>
+                    <select class="select select-bordered w-full" required>
+                        <option value="open">Ouvert</option>
+                        <option value="closed">Fermé</option>
+                        <option value="filled">Pourvu</option>
+                    </select>
+                </div>
+                
+                <div class="md:col-span-2">
+                    <label class="label">
+                        <span class="label-text">Description *</span>
+                    </label>
+                    <textarea class="textarea textarea-bordered w-full" rows="3" required></textarea>
+                </div>
+                
+                <div class="md:col-span-2">
+                    <label class="label">
+                        <span class="label-text">Prérequis *</span>
+                    </label>
+                    <textarea class="textarea textarea-bordered w-full" rows="3" required></textarea>
+                </div>
+            </div>
+            
+            <div class="modal-action">
+                <button type="button" class="btn btn-ghost" onclick="closeRecruitmentModal()">Annuler</button>
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Fonction pour filtrer les offres de recrutement
+    function filterRecruitments() {
+        const form = document.getElementById('filter-form');
+        const formData = new FormData(form);
+        const params = new URLSearchParams();
+        
+        for (const [key, value] of formData.entries()) {
+            if (value) {
+                params.append(key, value);
+            }
+        }
+        
+        const url = new URL(window.location);
+        url.search = params.toString();
+        window.location.href = url.toString();
+    }
+    
+    // Fonctions pour gérer le recrutement
+    function openRecruitmentModal() {
+        document.getElementById('recruitment-modal-title').textContent = 'Nouvelle offre';
+        document.getElementById('recruitment-form').reset();
+        document.getElementById('recruitment-modal').classList.add('modal-open');
+    }
+    
+    function closeRecruitmentModal() {
+        document.getElementById('recruitment-modal').classList.remove('modal-open');
+    }
+    
+    function editRecruitment(id) {
+        // Dans une vraie application, on chargerait les données de l'offre
+        document.getElementById('recruitment-modal-title').textContent = 'Modifier l'offre';
+        document.getElementById('recruitment-modal').classList.add('modal-open');
+    }
+    
+    function deleteRecruitment(id) {
+        if (confirm('Êtes-vous sûr de vouloir supprimer cette offre ?')) {
+            // Dans une vraie application, on enverrait une requête au serveur
+            alert('Offre supprimée avec succès');
+        }
+    }
+    
+    // Gestion du formulaire
+    document.getElementById('recruitment-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Dans une vraie application, on enverrait les données au serveur
+        alert('Offre enregistrée avec succès');
+        closeRecruitmentModal();
+    });
+</script>
+{% endblock %}

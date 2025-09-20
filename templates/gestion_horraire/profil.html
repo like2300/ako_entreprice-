@@ -1,0 +1,90 @@
+{% extends 'gestion_horraire/base.html' %}
+
+{% block title %}Profil{% endblock %}
+
+{% block content %}
+<div class="card bg-base-100">
+    <div class="card-body">
+        <h2 class="card-title text-2xl">Profil de {{ user.get_full_name|default:user.username }}</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Nom d'utilisateur</span>
+                </label>
+                <input type="text" value="{{ user.username }}" class="input input-bordered" disabled>
+            </div>
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Adresse e-mail</span>
+                </label>
+                <input type="text" value="{{ user.email }}" class="input input-bordered" disabled>
+            </div>
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Prénom</span>
+                </label>
+                <input type="text" value="{{ user.first_name|default:'' }}" class="input input-bordered" disabled>
+            </div>
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Nom</span>
+                </label>
+                <input type="text" value="{{ user.last_name|default:'' }}" class="input input-bordered" disabled>
+            </div>
+            <div class="form-control md:col-span-2">
+                <label class="label">
+                    <span class="label-text">Département</span>
+                </label>
+                <input type="text" value="{{ user.department.name|default:'Non assigné' }}" class="input input-bordered" disabled>
+            </div>
+            {% if user.detailed_profile %}
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Date de naissance</span>
+                </label>
+                <input type="text" value="{{ user.detailed_profile.date_of_birth|date:'d/m/Y'|default:'Non renseigné' }}" class="input input-bordered" disabled>
+            </div>
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Genre</span>
+                </label>
+                <input type="text" value="{{ user.detailed_profile.get_gender_display|default:'Non renseigné' }}" class="input input-bordered" disabled>
+            </div>
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Téléphone</span>
+                </label>
+                <input type="text" value="{{ user.detailed_profile.phone_number|default:'Non renseigné' }}" class="input input-bordered" disabled>
+            </div>
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Adresse</span>
+                </label>
+                <input type="text" value="{{ user.detailed_profile.address|default:'Non renseigné' }}" class="input input-bordered" disabled>
+            </div>
+            <div class="form-control md:col-span-2">
+                <label class="label">
+                    <span class="label-text">Type de pièce d'identité</span>
+                </label>
+                <input type="text" value="{{ user.detailed_profile.get_id_type_display|default:'Non renseigné' }}" class="input input-bordered" disabled>
+            </div>
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Numéro de pièce</span>
+                </label>
+                <input type="text" value="{{ user.detailed_profile.id_number|default:'Non renseigné' }}" class="input input-bordered" disabled>
+            </div>
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Date d'embauche</span>
+                </label>
+                <input type="text" value="{{ user.detailed_profile.hire_date|date:'d/m/Y'|default:'Non renseigné' }}" class="input input-bordered" disabled>
+            </div>
+            {% endif %}
+        </div>
+        <div class="card-actions justify-end mt-6">
+            <button class="btn btn-primary" disabled>Modifier</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

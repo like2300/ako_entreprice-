@@ -1,0 +1,304 @@
+{% extends 'gestion_horraire/base.html' %}
+{% load static %}
+
+{% block title %}Pointage{% endblock %}
+
+{% block content %}
+<div class="p-4">
+    <!-- En-tête -->
+    <div class="text-center mb-6">
+        <h1 class="text-3xl font-bold">Pointage</h1>
+        <p class="text-gray-500">{{ pointage.date|date:"l d F Y" }}</p>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} shadow-lg mb-4">
+                <div>
+                    {% if message.tags == 'success' %}
+                        <svg class="w-6 h-6 stroke-current" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    {% else %}
+                        <svg class="w-6 h-6 stroke-current" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    {% endif %}
+                    <span>{{ message }}</span>
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Horloge -->
+    <div class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body items-center text-center">
+            <div class="font-mono text-3xl md:text-6xl"> 
+                <span id="clock-hours">--</span>:
+                <span id="clock-minutes">--</span>:
+                <span id="clock-seconds">--</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions de pointage -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Arrivée -->
+        <div class="card {% if not est_jour_travaille %}bg-base-200{% else %}bg-base-100{% endif %} shadow-xl">
+            <div class="card-body items-center text-center">
+                <h2 class="card-title">Arrivée</h2>
+                <div class="my-2">
+                    {% if pointage.heure_arrivee %}
+                        <p class="text-success text-lg font-bold">{{ pointage.heure_arrivee|time:"H:i" }}</p>
+                        <span class="badge badge-success gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                            </svg>
+                            Pointé
+                        </span>
+                    {% elif peut_pointer_arrivee %}
+                        <p class="text-primary text-lg font-bold" id="current-time-arrivee">{{ current_time|time:"H:i" }}</p>
+                        <form method="post" class="mt-2">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="arrivee">
+                            <button type="submit" onclick="confirm_action(event, 'arrivée')" class="btn btn-primary gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                                </svg>
+                                Pointer l'arrivée
+                            </button>
+                        </form>
+                    {% else %}
+                        <p class="text-gray-400">Non disponible</p>
+                        <span class="badge badge-ghost">Pointage impossible</span>
+                    {% endif %}
+                </div>
+                {% if parametres %}
+                <div class="text-sm text-gray-500">
+                    Heure limite : {{ parametres.heure_debut_standard|time:"H:i" }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Départ -->
+        <div class="card {% if not est_jour_travaille %}bg-base-200{% else %}bg-base-100{% endif %} shadow-xl">
+            <div class="card-body items-center text-center">
+                <h2 class="card-title">Départ</h2>
+                <div class="my-2">
+                    {% if pointage.heure_depart %}
+                        <p class="text-error text-lg font-bold">{{ pointage.heure_depart|time:"H:i" }}</p>
+                        <span class="badge badge-error gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                            </svg>
+                            Pointé
+                        </span>
+                    {% elif peut_pointer_depart %}
+                        <p class="text-error text-lg font-bold" id="current-time-depart">{{ current_time|time:"H:i" }}</p>
+                        <form method="post" class="mt-2">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="depart">
+                            <button type="submit" onclick="confirm_action(event, 'départ')" class="btn btn-error gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+                                </svg>
+                                Pointer le départ
+                            </button>
+                        </form>
+                    {% else %}
+                        <p class="text-gray-400">Non disponible</p>
+                        <span class="badge badge-ghost">En attente de l'arrivée</span>
+                    {% endif %}
+                </div>
+                {% if parametres %}
+                <div class="text-sm text-gray-500">
+                    Heure standard : {{ parametres.heure_fin_standard|time:"H:i" }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Informations -->
+    <div class="card bg-base-100 shadow-xl mt-6">
+        <div class="card-body">
+            <h2 class="card-title">Informations du jour</h2>
+            <div class="stats stats-vertical shadow">
+                <div class="stat">
+                    <div class="stat-title">Statut</div>
+                    <div class="stat-value text-sm {{ pointage.get_status_display|lower }}">{{ pointage.get_status_display }}</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-title">Temps de travail</div>
+                    <div class="stat-value text-sm">{{ pointage.get_temps_travail_formate }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmation -->
+<div id="modal_confirm" class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg" id="modal_title"></h3>
+        <p class="py-4" id="modal_text"></p>
+        <div class="modal-action">
+            <button class="btn btn-ghost" onclick="close_modal()">Annuler</button>
+            <button class="btn" id="modal_confirm_btn" onclick="submit_form()">Confirmer</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Variables globales pour la gestion du temps
+let clockInterval = null;
+let currentForm = null;
+let currentTime = new Date();
+
+// Fonction pour formater les nombres sur 2 chiffres
+function padZero(num) {
+    return String(num).padStart(2, '0');
+}
+
+// Fonction pour obtenir l'heure actuelle
+function getCurrentTime() {
+    return {
+        hours: currentTime.getHours(),
+        minutes: currentTime.getMinutes(),
+        seconds: currentTime.getSeconds()
+    };
+}
+
+// Fonction pour mettre à jour l'horloge
+function updateClock() {
+    const time = getCurrentTime();
+    const h = padZero(time.hours);
+    const m = padZero(time.minutes);
+    const s = padZero(time.seconds);
+
+    const elH = document.getElementById('clock-hours');
+    const elM = document.getElementById('clock-minutes');
+    const elS = document.getElementById('clock-seconds');
+
+    // Vérifier que les éléments existent avant de les mettre à jour
+    if (elH) {
+        elH.innerText = h;
+    } else {
+        console.warn("Élément 'clock-hours' non trouvé");
+    }
+    
+    if (elM) {
+        elM.innerText = m;
+    } else {
+        console.warn("Élément 'clock-minutes' non trouvé");
+    }
+    
+    if (elS) {
+        elS.innerText = s;
+    } else {
+        console.warn("Élément 'clock-seconds' non trouvé");
+    }
+    
+    // Mettre à jour aussi les heures affichées dans les formulaires
+    const timeStr = `${h}:${m}`;
+    const arriveeEl = document.getElementById('current-time-arrivee');
+    const departEl = document.getElementById('current-time-depart');
+    
+    if (arriveeEl) arriveeEl.innerText = timeStr;
+    if (departEl) departEl.innerText = timeStr;
+    
+     
+}
+
+// Fonction pour confirmer une action
+function confirm_action(event, action) {
+    event.preventDefault();
+    currentForm = event.target.closest('form');
+    
+    const time = getCurrentTime();
+    const serverTimeStr = `${padZero(time.hours)}:${padZero(time.minutes)}`;
+    
+    const modal = document.getElementById('modal_confirm');
+    document.getElementById('modal_title').innerText = `Confirmer le pointage de ${action}`;
+    document.getElementById('modal_text').innerText = `Voulez-vous vraiment pointer votre ${action} à ${serverTimeStr} ?`;
+    
+    const confirmBtn = document.getElementById('modal_confirm_btn');
+    confirmBtn.className = `btn ${action === 'arrivée' ? 'btn-primary' : 'btn-error'}`;
+    
+    modal.classList.add('modal-open');
+}
+
+// Fonctions pour gérer le modal
+function close_modal() {
+    document.getElementById('modal_confirm').classList.remove('modal-open');
+    currentForm = null;
+}
+
+function submit_form() {
+    if (currentForm) {
+        // Ajouter l'heure exacte du serveur au formulaire
+        const time = getCurrentTime();
+        const timeInput = document.createElement('input');
+        timeInput.type = 'hidden';
+        timeInput.name = 'server_time';
+        timeInput.value = `${padZero(time.hours)}:${padZero(time.minutes)}:${padZero(time.seconds)}`;
+        currentForm.appendChild(timeInput);
+        
+        currentForm.submit();
+    }
+}
+
+// Initialisation
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("Initialisation de l'horloge");
+    
+    // Vérifier si les éléments de l'horloge existent
+    const elH = document.getElementById('clock-hours');
+    const elM = document.getElementById('clock-minutes');
+    const elS = document.getElementById('clock-seconds');
+    
+    console.log("Éléments de l'horloge:", {elH, elM, elS});
+    
+    // Utiliser l'heure du serveur fournie par Django
+    const serverTimeString = "{{ current_time|date:'c' }}";
+    console.log("Heure serveur:", serverTimeString);
+    
+    // Initialiser avec l'heure du serveur
+    const serverTime = new Date(serverTimeString);
+    if (!isNaN(serverTime.getTime())) {
+        currentTime = serverTime;
+        console.log("Heure serveur valide, initialisation avec:", currentTime);
+    } else {
+        console.log("Heure serveur invalide, utilisation de l'heure locale");
+        currentTime = new Date();
+    }
+    
+    // Mettre à jour l'horloge immédiatement
+    updateClock();
+    
+    // Mettre à jour l'horloge toutes les secondes
+    clockInterval = setInterval(() => {
+        // Incrémenter l'heure locale d'une seconde
+        currentTime = new Date(currentTime.getTime() + 1000);
+        updateClock();
+    }, 1000);
+    
+    // Forcer une mise à jour supplémentaire après un court délai
+    // pour s'assurer que le DOM est complètement rendu
+    setTimeout(updateClock, 100);
+});
+
+// Forcer une mise à jour de l'horloge dès que la page est chargée
+window.addEventListener('load', function() {
+    console.log("Page entièrement chargée, mise à jour de l'horloge");
+    updateClock();
+});
+
+// Nettoyage en cas de déchargement de la page
+window.addEventListener('beforeunload', function() {
+    if (clockInterval) {
+        clearInterval(clockInterval);
+    }
+});
+</script>
+{% endblock %}

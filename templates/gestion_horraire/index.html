@@ -1,0 +1,22 @@
+{% extends 'gestion_horraire/base.html' %}
+
+{% block title %}
+Accueil
+{% endblock %}
+
+{% block content %}
+
+   
+
+
+       <center class="min-h-screen flex flex-col justify-center items-center gap-6">
+            <p>Bienvenue dans l'application de gestion des horaires.</p>
+            <h2>Gestion_Horraire</h2>
+            <button class="btn btn-primary btn-lg" >
+                <a href="{% url 'gestion_Horraire:pointage_home' %}"> 
+                    Pointage employe
+                </a>
+            </button>
+       </center>
+    
+{% endblock %}

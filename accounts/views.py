@@ -22,7 +22,7 @@ def signup(request):
 
             if user is not None:
                 login(request, user)  # ici, pas besoin de forcer backend
-                return redirect("redirect-after-login")
+                return redirect("accounts:redirect-after-login")
     else:
         form = CustomUserCreationForm()
 
@@ -42,6 +42,7 @@ def redirect_after_login(request):
         return redirect("finance:dashboard")
     elif user.department and user.department.code == "RH":
         return redirect("rh:dashboard")
+    
     # else:
     # # Admin ou user sans département → rediriger vers un dashboard générique
     #     return redirect("admin:index")  # ou une page d'accueil spécifique
@@ -49,4 +50,4 @@ def redirect_after_login(request):
         # Si pas de département -> on déconnecte pour éviter un accès sauvage
         from django.contrib.auth import logout
         logout(request)
-        return redirect("login")
+        return redirect("accounts:login")

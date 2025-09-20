@@ -1,2 +1,172 @@
-<h2>Tableau de bord — RH</h2>
-<p>Réservé au département Ressources Humaines.</p>
+{% extends 'rh/base.html' %}
+
+{% block title %}Tableau de bord RH{% endblock %}
+
+{% block content %}
+<div class="p-4">
+    <h1 class="text-3xl font-bold mb-6">Tableau de bord RH</h1>
+    
+    <!-- Statistiques -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="card bg-primary text-primary-content">
+            <div class="card-body">
+                <h2 class="card-title">Employés</h2>
+                <p class="text-4xl font-bold" id="employee-count">{{ employeeCount }}</p>
+            </div>
+        </div>
+        
+        <div class="card bg-secondary text-secondary-content">
+            <div class="card-body">
+                <h2 class="card-title">Congés en attente</h2>
+                <p class="text-4xl font-bold" id="pending-leave-count">{{ leaveCount }}</p>
+            </div>
+        </div>
+        
+        <div class="card bg-accent text-accent-content">
+            <div class="card-body">
+                <h2 class="card-title">Présents aujourd'hui</h2>
+                <p class="text-4xl font-bold" id="present-today-count">{{ presentCount }}</p>
+                <p class="text-sm">Taux de présence: <span id="presence-percentage">{{ presencePercentage|floatformat:2 }}</span>%</p>
+            </div>
+        </div>
+        
+        <div class="card bg-neutral text-neutral-content">
+            <div class="card-body">
+                <h2 class="card-title">En retard aujourd'hui</h2>
+                <p class="text-4xl font-bold" id="late-today-count">{{ lateCount }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Graphiques -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title">Présences sur 7 jours</h2>
+                <div class="chart-container">
+                    <canvas id="attendanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title">Statut des employés</h2>
+                <div class="chart-container">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Dernières activités -->
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title">Dernières activités</h2>
+            <div class="overflow-x-auto">
+                <table class="table table-zebra">
+                    <thead>
+                        <tr>
+                            <th>Employé</th>
+                            <th>Date/Heure</th>
+                            <th>Action</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody id="activity-table-body">
+                        {% for activity in recent_activities %}
+                        <tr>
+                            <td>{{ activity.employee }}</td>
+                            <td>{{ activity.datetime }}</td>
+                            <td>{{ activity.action }}</td>
+                            <td>{{ activity.status }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Données du serveur
+    const weeklyTrend = {{ weekly_trend|safe }};
+    const statusStats = {{ status_stats|safe }};
+    
+    // Données pour le graphique de présence
+    const attendanceData = {
+        labels: weeklyTrend.labels,
+        datasets: [{
+            label: 'Présents',
+            data: weeklyTrend.present_data,
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1
+        }, {
+            label: 'Absents',
+            data: weeklyTrend.absent_data,
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 1
+        }]
+    };
+    
+    // Données pour le graphique de statut
+    const statusData = {
+        labels: statusStats.labels,
+        datasets: [{
+            label: 'Nombre d\'employés',
+            data: statusStats.data,
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.2)',
+                'rgba(54, 162, 235, 0.2)',
+                'rgba(255, 205, 86, 0.2)',
+                'rgba(75, 192, 192, 0.2)',
+                'rgba(153, 102, 255, 0.2)'
+            ],
+            borderColor: [
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 205, 86, 1)',
+                'rgba(75, 192, 192, 1)',
+                'rgba(153, 102, 255, 1)'
+            ],
+            borderWidth: 1
+        }]
+    };
+    
+    // Création des graphiques
+    document.addEventListener('DOMContentLoaded', function() {
+        const attendanceCtx = document.getElementById('attendanceChart').getContext('2d');
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        
+        new Chart(attendanceCtx, {
+            type: 'bar',
+            data: attendanceData,
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+        
+        new Chart(statusCtx, {
+            type: 'pie',
+            data: statusData,
+            options: {
+                responsive: true
+            }
+        });
+    });
+</script>
+{% endblock %}

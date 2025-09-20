@@ -8,7 +8,18 @@ SECRET_KEY = 'django-insecure-replace-this-with-a-secure-key'
 DEBUG = True
 ALLOWED_HOSTS = ['*']
 
+# Unfold configuration
+UNFOLD = {
+    "SITE_TITLE": "Entreprise Admin",
+    "SITE_HEADER": "Entreprise Admin",
+    "SITE_SYMBOL": "💼",
+    "SHOW_HISTORY": True,
+    "SHOW_VIEW_ON_SITE": True,
+}
+
 INSTALLED_APPS = [
+    'unfold',
+    # Django
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -22,6 +33,7 @@ INSTALLED_APPS = [
     'stock',
     'finance',
     'rh',
+    'gestion_Horraire',
 ]
 
 MIDDLEWARE = [
