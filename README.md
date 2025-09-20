@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Mini-projet Django — Entreprise (multi-départements)
 
 Contenu:
@@ -35,3 +36,6 @@ Notes:
 - Le projet utilise SQLite par défaut.
 - Les templates sont basiques; adapte le HTML/CSS selon tes besoins.
 - Pour ajouter un département, utilise l'admin ou charge une fixture.
+=======
+# ako_entreprice-
+>>>>>>> 47b13953e7c1e98b4a814cd15d0157065b6ec12b
